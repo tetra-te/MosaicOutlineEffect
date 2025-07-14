@@ -8,10 +8,10 @@ using YukkuriMovieMaker.Plugin.Effects;
 
 namespace MosaicOutlineEffect
 {
-    [VideoEffect("モザイク縁取り", ["装飾"], ["mosaic outline"], isAviUtlSupported: false, isEffectItemSupported: false)]
+    [VideoEffect("縁取り（モザイク）", ["装飾"], ["mosaic outline"], isAviUtlSupported: false, isEffectItemSupported: false)]
     internal class MosaicOutlineEffect : VideoEffectBase
     {
-        public override string Label => "モザイク縁取り";
+        public override string Label => "縁取り（モザイク）";
 
         [Display(GroupName = "モザイク縁取り", Name = "太さ", Description = "縁の太さ")]
         [AnimationSlider("F1", "px", 0, 10)]

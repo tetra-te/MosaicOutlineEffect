@@ -1,7 +1,9 @@
 # モザイク縁取り
 
 ## 概要
-カクカクの縁取りをする映像エフェクト
+カクカクの縁取りをする映像エフェクト  
+
+<img width="1920" height="1080" alt="サムネイル" src="https://github.com/user-attachments/assets/4d2f959e-dfc3-47b5-8741-aa2d9a555637" />
 
 ## 導入方法
 ### [最新バージョンをダウンロード](https://github.com/tetra-te/MosaicOutlineEffect/releases/latest)

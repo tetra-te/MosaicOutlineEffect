@@ -9,5 +9,9 @@ namespace MosaicOutlineEffect
         public static Type? TypeofMosaic = assembly.GetType("YukkuriMovieMaker.Player.Video.Effects.CustomEffects.Mosaic");
 
         public static PropertyInfo? SizeProp = TypeofMosaic?.GetProperty("Size");
+
+        public static Type? TypeofOutline = assembly.GetType("YukkuriMovieMaker.Project.Effects.OutlineLiteEffect") ?? assembly.GetType("YukkuriMovieMaker.Project.Effects.OutlineEffect");
+
+        public static PropertyInfo? StrokeThicknessProp = TypeofOutline?.GetProperty("StrokeThickness", BindingFlags.Public | BindingFlags.Instance);
     }
 }

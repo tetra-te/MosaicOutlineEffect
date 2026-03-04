@@ -3,6 +3,7 @@ using Vortice.Direct2D1;
 using Vortice.Direct2D1.Effects;
 using YukkuriMovieMaker.Commons;
 using YukkuriMovieMaker.Player.Video;
+using YukkuriMovieMaker.Plugin.Effects;
 using YukkuriMovieMaker.Project.Effects;
 
 namespace MosaicOutlineEffect
@@ -16,7 +17,7 @@ namespace MosaicOutlineEffect
         AffineTransform2D scaleEffect1;
         AffineTransform2D scaleEffect2;
 
-        OutlineEffect outlineEffect;
+        IVideoEffect outlineEffect;
         IVideoEffectProcessor outlineEffectProcessor;
 
         D2D1CustomShaderEffectBase mosaicEffect;
@@ -36,8 +37,8 @@ namespace MosaicOutlineEffect
         public MosaicOutlineEffectProcessor(IGraphicsDevicesAndContext devices, MosaicOutlineEffect item)
         {
             this.item = item;
-         
-            outlineEffect = new OutlineEffect();
+
+            outlineEffect = (IVideoEffect)Activator.CreateInstance(TypeAndProperty.TypeofOutline);
             outlineEffectProcessor = outlineEffect.CreateVideoEffect(devices);
             disposer.Collect(outlineEffectProcessor);
             scaleEffect1 = new AffineTransform2D(devices.DeviceContext);
@@ -53,15 +54,22 @@ namespace MosaicOutlineEffect
             compositeEffect = new Composite(devices.DeviceContext);
             disposer.Collect(compositeEffect);
 
-            using (var image = scaleEffect1.Output)
+
+            // IVideoEffectProcessorのInputは即時Disposeしてはいけない
+            // ↓ダメなコード
+            /*using (var image = scaleEffect1.Output)
             {
                 outlineEffectProcessor.SetInput(image);
-            }
-            using (var image = outlineEffectProcessor.Output)
-            {
-                scaleEffect2.InterPolationMode = AffineTransform2DInterpolationMode.NearestNeighbor;
-                scaleEffect2.SetInput(0, image, true);
-            }
+            }*/
+            var scale1Output = scaleEffect1.Output;
+            outlineEffectProcessor.SetInput(scale1Output);
+            disposer.Collect(scale1Output);
+            
+            // outlineEffectProcessor.OutputはoutlineEffectProcessor.Dispose()で解放されるので単体で開放しない
+            var outlineOutput = outlineEffectProcessor.Output;
+            scaleEffect2.InterPolationMode = AffineTransform2DInterpolationMode.NearestNeighbor;
+            scaleEffect2.SetInput(0, outlineOutput, true);
+
             using (var image = scaleEffect2.Output)
             {
                 mosaicEffect.SetInput(0, image, true);
@@ -87,13 +95,17 @@ namespace MosaicOutlineEffect
         public DrawDescription Update(EffectDescription effectDescription)
         {
             var frame = effectDescription.ItemPosition.Frame;
-            var length = effectDescription.ItemPosition.Frame;
+            var length = effectDescription.ItemDuration.Frame;
             var fps = effectDescription.FPS;
 
             var accuracy = item.Accuracy.GetValue(frame, length, fps) / 100;
 
-            var strokeThickness = item.StrokeThickness.GetValue(frame, length, fps) * accuracy;
-            SetAnimationValue(outlineEffect.StrokeThickness, strokeThickness);
+            if (TypeAndProperty.StrokeThicknessProp is not null)
+            {
+                var strokeThickness = item.StrokeThickness.GetValue(frame, length, fps) * accuracy;
+                var anm = (Animation?)TypeAndProperty.StrokeThicknessProp.GetValue(outlineEffect);
+                SetAnimationValue(anm, strokeThickness);
+            }         
 
             var mosaicSize = item.MosaicSize.GetValue(frame, length, fps);
             TypeAndProperty.SizeProp.SetValue(mosaicEffect, (float)mosaicSize);
@@ -138,8 +150,9 @@ namespace MosaicOutlineEffect
             return effectDescription.DrawDescription;
         }
 
-        static void SetAnimationValue(Animation animation, double value)
+        static void SetAnimationValue(Animation? animation, double value)
         {
+            if (animation is null) return;
             var current = animation.GetValue(0, 1, 30);
             animation.AddToEachValues(value - current);
         }
